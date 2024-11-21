@@ -22,7 +22,7 @@ describe "test del parcial" {
   }
 
     const creditoSanti = new Credito(maximoPermitido = 100000,cantidadDeCuotas = 6, interes = 2)
-    const santi = new Persona(formasDePago = [efectivo,creditoSanti], formaDePagoPreferida = creditoSanti, dinero = 10000, mesActual = 1, salario = 1) //puede cobrar 0 si el trabajo fuera ser ayudante de catedra de pdp 
+    const santi = new Persona(formasDePago = [efectivo,creditoSanti], formaDePagoPreferida = creditoSanti, dinero = 10000, mesActual = 1, salario = 1) //tipazo pero con deudas
   test "santi tiene deudas"{
     santi.comprar(compu)
     santi.transcurreUnMes()
