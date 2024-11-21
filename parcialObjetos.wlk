@@ -3,8 +3,8 @@ class Persona{
   var formaDePagoPreferida
   const property cosasCompradas = []
   var property dinero
-  var mesActual // numero natural ejemplo 1
-  const cuotas = []
+  var property mesActual // numero natural ejemplo 1
+  const property cuotas = []
   var property salario
 
   method modificarSalario(numero){
@@ -44,17 +44,20 @@ class Persona{
   }
 
   method pagarCuotas(){
-    cuotas.forEach({cuota => cuota.pagarCuota(self,salario)})
+    cuotas.forEach({cuota => cuota.pagarCuota(self)})
   }
 
   method transcurreUnMes(){
-    self.cobrarSalario()
     mesActual = mesActual + 1
+    self.cobrarSalario()
+    
   }
 
   method cuotasVencidad() = cuotas.filter({cuotas => cuotas.vencida(mesActual)})
 
-
+  method agregarCuotas(cuotasNuevas){
+    cuotas.addAll(cuotasNuevas)
+  }
 
 }
 
@@ -84,7 +87,7 @@ class Grupo{
   method personaConMasCosas() = personas.max({persona => persona.cosasCompradas().size()})
 }
 
-class Compras{
+class Compra{
   var property precio
 }
 
@@ -127,27 +130,31 @@ class Credito inherits FormaDePago{
 
   method comprar(algo,persona){
     const cuotas = self.crearCuotas(algo,persona)
-    persona.agregarCutoas(cuotas)
+    persona.agregarCuotas(cuotas)
   }
 
   method crearCuotas(algo,persona) = (1..cantidadDeCuotas).map({numero => self.crearCuota(numero,algo,persona)})
 
   method crearCuota(numero,algo,persona) = new Cuota(mes = persona.mesActual() + numero,valorPagar = (algo.precio() + self.interes(algo)))
 
-  method interes(algo) = algo.precio() * interes / 100
+  method interes(algo) = self.calculoPorcentaje(interes,algo)
+
+  method calculoPorcentaje(valor,algo) = valor * algo.precio() / 100
 }
 
-class NuevoCredito inherits Credito{
-  var inflacion 
+class NuevoCredito inherits Credito{ // cuotas con descuento
+  var descuento
+
+  override method interes(algo) = super(algo) - self.calculoPorcentaje(descuento,algo)
 }
 
 class Cuota{
   var mes = 0
   const valorPagar
 
-  method pagarCuota(persona,medioDePago){
-    if(persona.mesActual() >= mes and medioDePago >= valorPagar){
-      persona.medioDePago(persona.medioDePago()-valorPagar)
+  method pagarCuota(persona){
+    if(persona.mesActual() >= mes and persona.salario() >= valorPagar){
+      persona.salario(persona.salario()-valorPagar)
       persona.cuotas().remove(self)
     }
   }
