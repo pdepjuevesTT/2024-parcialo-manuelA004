@@ -1,33 +1,183 @@
-import parcialObjetos.*
+class Persona{
+  const formasDePago = []  // incluye cuentas bancarias que es lo mismo que pagar con debito 
+  var formaDePagoPreferida
+  const property cosasCompradas = []
+  var property dinero
+  var property mesActual // numero natural ejemplo 1
+  const property cuotas = []
+  var property salario
 
-describe "test del parcial" {
-    const creditoManu = new Credito(maximoPermitido = 100000,cantidadDeCuotas = 6, interes = 2)
-    const manu = new Persona(formasDePago = [efectivo,creditoManu], formaDePagoPreferida = creditoManu, dinero = 10000, mesActual = 1, salario = 1000000) //puede cobrar 0 si el trabajo fuera ser ayudante de catedra de pdp 
-    const compu = new Compra(precio = 50000)
-  test "manu puede comprar una compu" {
-    assert.that(manu.puedeComprar(compu))
+  method modificarSalario(numero){
+    salario = salario + numero
   }
 
-  test "manu compra la compu y ahora tiene 6 cuotas y la compu"{
-    manu.comprar(compu)
-    assert.equals(manu.cuotas().size(), 6)
-    assert.that(manu.cosasCompradas().contains(compu))
+  method modificarFormaDePagoPreferida(formaDePago){
+    if(formasDePago.contains(formaDePago)){
+      formaDePagoPreferida = formaDePago
+    }
   }
 
-  test "pasa un mes manu paga una cuota, dinero de manu es 959000"{
-    manu.comprar(compu)
-    manu.transcurreUnMes()
-    assert.equals(manu.cuotas().size(),5)
-    assert.equals(manu.dinero(),959000)
+  method modificarDinero(numero){ //podria usar el property pero me resulta mas comodo de esta manera 
+    dinero = dinero + numero
   }
 
-    const creditoSanti = new Credito(maximoPermitido = 100000,cantidadDeCuotas = 6, interes = 2)
-    const santi = new Persona(formasDePago = [efectivo,creditoSanti], formaDePagoPreferida = creditoSanti, dinero = 10000, mesActual = 1, salario = 1) //puede cobrar 0 si el trabajo fuera ser ayudante de catedra de pdp 
-    const coampu2 = new Compra(precio = 50000)
-  test "santi tiene deudas"{
-    santi.comprar(compu)
-    santi.transcurreUnMes()
-    assert.equals(santi.cuotasVencidas().size(), 1)
+  method esTitular(cuentaBancaria) = formasDePago.contains(cuentaBancaria)
+
+  method comprar(algo){
+    if(self.puedeComprar(algo)){
+      self.comprarPropio(algo)
+      cosasCompradas.add(algo)
+    }
+  }
+
+  method comprarPropio(algo){
+    formaDePagoPreferida.comprar(algo,self)
+  }
+
+  method puedeComprar(algo) = formaDePagoPreferida.puedeComprar(algo,self)
+
+  method cobrarSalario(){
+    var salarioMes = salario
+    self.pagarCuotas()
+    self.modificarDinero(salario)
+    salario = salarioMes // esto es para que el salario vuelva a ser el mismo despues de pagar las cuotas y de modificar el diner, sto es ais porque al mes siguienete el salario deberia ser el mismo a menos de que en su trabajo lo cambien(?
+  }
+
+  method pagarCuotas(){
+    cuotas.forEach({cuota => cuota.pagarCuota(self,salario)})
+  }
+
+  method transcurreUnMes(){
+    mesActual = mesActual + 1
+    self.cobrarSalario()
+    
+  }
+
+  method cuotasVencidas() = cuotas.filter({cuotas => cuotas.vencida(mesActual)})
+
+  method agregarCuotas(cuotasNuevas){
+    cuotas.addAll(cuotasNuevas)
+  }
+
+  method pagarCuota(cuota){
+    self.modificarSalario(-cuota.valorPagar())
   }
 
 }
+
+class Compradorcompulsivo inherits Persona{
+  override method puedeComprar(algo) = formasDePago.any({formaDePago => formaDePago.puedeComprar(algo,self)})
+
+  override method comprarPropio(algo){
+    formasDePago.find({formaDePago => formaDePago.puedeComprar(algo,self)}).comprar(algo,self)
+  }
+}
+
+class PagadorCompulsivo inherits Persona{
+  override method pagarCuotas(){
+    super()
+    cuotas.forEach({cuota => cuota.pagarCuota(self,dinero)})
+  }
+
+  override method pagarCuota(cuota){
+    if(salario >= cuota.valorpagar()){
+      super(cuota)
+    }
+    else{
+      self.modificarDinero(-cuota.valorPagar())
+    }
+  }
+}
+
+class Grupo{
+  const personas = []
+
+  method pasarMes(){
+    personas.forEach({persona => persona.transcurreUnMes()})
+  }
+
+  method personaConMasCosas() = personas.max({persona => persona.cosasCompradas().size()})
+}
+
+class Compra{
+  var property precio
+}
+
+class FormaDePago{
+  method puedeComprar(algo,persona) = self.loPropio(persona) >= algo.precio()
+
+  method loPropio(persona) 
+}
+
+
+object efectivo inherits FormaDePago{
+  override method loPropio(persona) = persona.dinero()
+
+  method comprar(algo,persona) { 
+    persona.modificarDinero(-algo.precio())
+  }
+}
+
+class CuentaBancaria inherits FormaDePago{ //seria lo mismo que debito
+  var property saldo
+
+  method modificarSaldo(numero) {
+    saldo = saldo + numero
+  }
+  override method loPropio(persona) = saldo
+  override method puedeComprar(algo,persona) = persona.esTitular(self) and super(persona,algo)
+
+  method comprar(algo,_persona){
+    self.modificarSaldo(-algo.precio())
+  }
+}
+
+
+class Credito inherits FormaDePago{
+  var maximoPermitido
+  var cantidadDeCuotas
+  var interes
+
+  override method loPropio(persona) = maximoPermitido
+
+  method comprar(algo,persona){
+    const cuotas = self.crearCuotas(algo,persona)
+    persona.agregarCuotas(cuotas)
+  }
+
+  method crearCuotas(algo,persona) = (1..cantidadDeCuotas).map({numero => self.crearCuota(numero,algo,persona)})
+
+  method crearCuota(numero,algo,persona) = new Cuota(mes = persona.mesActual() + numero,valorPagar = (algo.precio() + self.interes(algo)))
+
+  method interes(algo) = self.calculoPorcentaje(interes,algo)
+
+  method calculoPorcentaje(valor,algo) = valor * algo.precio() / 100
+}
+
+class NuevoCredito inherits Credito{ // cuotas con descuento
+  var descuento
+
+  override method interes(algo) = super(algo) - self.calculoPorcentaje(descuento,algo)
+}
+
+class Cuota{
+  var mes = 0
+  const property valorPagar
+
+
+  method puedePagarCuota(persona,pago) = persona.mesActual() >= mes and pago >= valorPagar
+  method pagarCuota(persona,metodoPago){
+    if(self.puedePagarCuota(persona,metodoPago)){
+      self.pagoCuota(persona)
+    }
+  }
+
+  method pagoCuota(persona){
+    persona.pagarCuota(self)
+    persona.cuotas().remove(self)
+  }
+
+  method vencida(mesActual) = mes <= mesActual
+}
+
+
