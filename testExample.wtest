@@ -14,10 +14,11 @@ describe "test del parcial" {
     assert.that(manu.cosasCompradas().contains(compu))
   }
 
-  test "pasa un mes manu paga una cuota"{
+  test "pasa un mes manu paga una cuota, dinero de manu es 959000"{
     manu.comprar(compu)
     manu.transcurreUnMes()
     assert.equals(manu.cuotas().size(),5)
+    assert.equals(manu.dinero(),959000)
   }
 
 }
