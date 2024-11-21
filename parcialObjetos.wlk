@@ -53,7 +53,7 @@ class Persona{
     
   }
 
-  method cuotasVencidad() = cuotas.filter({cuotas => cuotas.vencida(mesActual)})
+  method cuotasVencidas() = cuotas.filter({cuotas => cuotas.vencida(mesActual)})
 
   method agregarCuotas(cuotasNuevas){
     cuotas.addAll(cuotasNuevas)
@@ -177,7 +177,7 @@ class Cuota{
     persona.cuotas().remove(self)
   }
 
-  method vencida(mesActual) = mes >= mesActual
+  method vencida(mesActual) = mes <= mesActual
 }
 
 
