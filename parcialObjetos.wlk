@@ -89,7 +89,7 @@ class PagadorCompulsivo inherits Persona{
   }
 }
 
-class Grupo{
+class Grupo{ // esto es para poder hacer pasar un mes a un grupo de personas o para ver quien es el que tiene mas cosas compradas 
   const personas = []
 
   method pasarMes(){
