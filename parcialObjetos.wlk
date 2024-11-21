@@ -79,7 +79,7 @@ class PagadorCompulsivo inherits Persona{
     cuotas.forEach({cuota => cuota.pagarCuota(self,dinero)})
   }
 
-  override method pagarCuota(cuota){
+  override method pagarCuota(cuota){//medio rebuscado a mi entender pero no se me ocurrio de otra manera
     if(salario >= cuota.valorpagar()){
       super(cuota)
     }
@@ -179,5 +179,6 @@ class Cuota{
 
   method vencida(mesActual) = mes <= mesActual
 }
+
 
 
