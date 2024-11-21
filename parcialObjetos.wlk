@@ -1,5 +1,5 @@
 class Persona{
-  const formasDePago = []  // incluye cuentas bancarias
+  const formasDePago = []  // incluye cuentas bancarias que es lo mismo que pagar con debito 
   var formaDePagoPreferida
   const property cosasCompradas = []
   var property dinero
@@ -44,7 +44,7 @@ class Persona{
   }
 
   method pagarCuotas(){
-    cuotas.forEach({cuota => cuota.pagarCuota(self)})
+    cuotas.forEach({cuota => cuota.pagarCuota(self,salario)})
   }
 
   method transcurreUnMes(){
@@ -57,6 +57,10 @@ class Persona{
 
   method agregarCuotas(cuotasNuevas){
     cuotas.addAll(cuotasNuevas)
+  }
+
+  method pagarCuota(cuota){
+    self.modificarSalario(-cuota.valorPagar())
   }
 
 }
@@ -73,7 +77,15 @@ class PagadorCompulsivo inherits Persona{
   override method pagarCuotas(){
     super()
     cuotas.forEach({cuota => cuota.pagarCuota(self,dinero)})
+  }
 
+  override method pagarCuota(cuota){
+    if(salario >= cuota.valorpagar()){
+      super(cuota)
+    }
+    else{
+      self.modificarDinero(-cuota.valorPagar())
+    }
   }
 }
 
@@ -150,13 +162,19 @@ class NuevoCredito inherits Credito{ // cuotas con descuento
 
 class Cuota{
   var mes = 0
-  const valorPagar
+  const property valorPagar
 
-  method pagarCuota(persona){
-    if(persona.mesActual() >= mes and persona.salario() >= valorPagar){
-      persona.salario(persona.salario()-valorPagar)
-      persona.cuotas().remove(self)
+
+  method puedePagarCuota(persona,pago) = persona.mesActual() >= mes and pago >= valorPagar
+  method pagarCuota(persona,metodoPago){
+    if(self.puedePagarCuota(persona,metodoPago)){
+      self.pagoCuota(persona)
     }
+  }
+
+  method pagoCuota(persona){
+    persona.pagarCuota(self)
+    persona.cuotas().remove(self)
   }
 
   method vencida(mesActual) = mes >= mesActual
