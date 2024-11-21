@@ -1,14 +1,20 @@
 class Persona{
   const formasDePago = []  // incluye cuentas bancarias
   var formaDePagoPreferida
-  const cosasCompradas = []
+  const property cosasCompradas = []
   var property dinero
-  var mesActual // numero natural ejemplo 8
+  var mesActual // numero natural ejemplo 1
   const cuotas = []
-  var salario
+  var property salario
 
   method modificarSalario(numero){
     salario = salario + numero
+  }
+
+  method modificarFormaDePagoPreferida(formaDePago){
+    if(formasDePago.contains(formaDePago)){
+      formaDePagoPreferida = formaDePago
+    }
   }
 
   method modificarDinero(numero){ //podria usar el property pero me resulta mas comodo de esta manera 
@@ -19,15 +25,63 @@ class Persona{
 
   method comprar(algo){
     if(self.puedeComprar(algo)){
-      formaDePagoPreferida.comprar(algo,self)
+      self.comprarPropio(algo)
       cosasCompradas.add(algo)
     }
   }
 
+  method comprarPropio(algo){
+    formaDePagoPreferida.comprar(algo,self)
+  }
+
   method puedeComprar(algo) = formaDePagoPreferida.puedeComprar(algo,self)
 
+  method cobrarSalario(){
+    var salarioMes = salario
+    self.pagarCuotas()
+    self.modificarDinero(salario)
+    salario = salarioMes
+  }
+
+  method pagarCuotas(){
+    cuotas.forEach({cuota => cuota.pagarCuota(self,salario)})
+  }
+
+  method transcurreUnMes(){
+    self.cobrarSalario()
+    mesActual = mesActual + 1
+  }
+
+  method cuotasVencidad() = cuotas.filter({cuotas => cuotas.vencida(mesActual)})
 
 
+
+}
+
+class Compradorcompulsivo inherits Persona{
+  override method puedeComprar(algo) = formasDePago.any({formaDePago => formaDePago.puedeComprar(algo,self)})
+
+  override method comprarPropio(algo){
+    formasDePago.find({formaDePago => formaDePago.puedeComprar(algo,self)}).comprar(algo,self)
+  }
+}
+
+class PagadorCompulsivo inherits Persona{
+  override method pagarCuotas(){
+    super()
+    cuotas.forEach({cuota => cuota.pagarCuota(self,dinero)})
+
+  }
+}
+
+class Grupo{
+  const personas = []
+
+  method pasarMes(){
+    personas.forEach({persona => persona.transcurreUnMes()})
+  }
+
+  method personaConMasCosas() = personas.max({persona => persona.cosasCompradas().size()})
 }
 
 class Compras{
@@ -83,11 +137,22 @@ class Credito inherits FormaDePago{
   method interes(algo) = algo.precio() * interes / 100
 }
 
+class NuevoCredito inherits Credito{
+  var inflacion 
+}
+
 class Cuota{
   var mes = 0
   const valorPagar
 
-  method mes() =if(mes > 12){mes -12} else{mes}
+  method pagarCuota(persona,medioDePago){
+    if(persona.mesActual() >= mes and medioDePago >= valorPagar){
+      persona.medioDePago(persona.medioDePago()-valorPagar)
+      persona.cuotas().remove(self)
+    }
+  }
+
+  method vencida(mesActual) = mes >= mesActual
 }
 
 
